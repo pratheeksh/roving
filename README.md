@@ -23,5 +23,4 @@ Safe roving project
                     adjacent to it. Neither the mothership nor the rovers can move diagonally on the field or through
                     other rovers or skip tiles.
                 </li>
-
             </ul>
