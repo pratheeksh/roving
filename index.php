@@ -37,6 +37,8 @@
                     <li>Player 1 plays first and plants as many mines as given in game controls on the field. </li>
                     <li>The mine placement should not block all paths of the mothership from the base to the destination.</li>
                     <li>Mines cannot be placed on the mothership and on the destination.</li>
+		    <li>Left click the mothership once you finish placing mines to hide the mines and start player 2.</li>
+
                 </ul>
                 <b>Player 2</b>
                 <br>
