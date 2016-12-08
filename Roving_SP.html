@@ -4,8 +4,7 @@
     <meta http-equiv="content-type" content="text/html; charset=UTF-8">
     <meta name="robots" content="noindex, nofollow">
     <meta name="googlebot" content="noindex, nofollow">
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
-    <link rel="stylesheet" type="text/css" href="css/result-light.css">
+ <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>    <link rel="stylesheet" type="text/css" href="css/result-light.css">
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css"
           integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"
@@ -33,6 +32,7 @@
         var expX = [];
         var expY = [];
         var expCount = 0;
+        var selected = 0;
 
         mineCount = mineX.length;
         var allMines = [];
@@ -72,8 +72,6 @@
         finish.onload = loadElement();
         finish.src = "http://res.freestockphotos.biz/pictures/7/7240-illustration-of-a-burst-with-win-text-pv.png";
 
-
-        var selected = 0;
 
         function loadMothership(ctx) {
             return function () {
@@ -363,12 +361,12 @@
 
             mouseX = parseInt(e.pageX - offsetX);
             mouseY = parseInt(e.pageY - offsetY);
-            if (mineCount >= maxMines) {
-                phase = 1;
-                $('#playerIdDisplay').html("Mines placed. You are player " + (phase + 1));
-
-                return;
-            }
+//            if (mineCount >= maxMines) {
+//                phase = 1;
+//                $('#playerIdDisplay').html("Mines placed. Click on the mothership to start " + (phase + 1));
+//
+//                return;
+//            }
             for (var c = 0; c < mineCount; c++) {
                 if (mouseX > mineX[c] && mouseX < mineX[c] + 40
                         && mouseY > mineY[c] && mouseY < mineY[c] + 40) {
@@ -391,7 +389,8 @@
 
                     allMines = mineX.concat(mineY);
                     phase = 1;
-                    $('#playerIdDisplay').html("Mines placed. You are player " + (phase + 1));
+                    $('#playerIdDisplay').html("Mines placed. <br> Click on the mothership to start phase " + (phase +
+                            1));
 
                     return;
                 }
@@ -578,7 +577,40 @@
             })
         });
 
+        function resetGame() {
+            document.getElementById("submit").disabled = false;
+            document.getElementById("rover-count").disabled = false;
+            document.getElementById("grid-size").disabled = false;
+            var parent = document.getElementById("inner");
+            var child = document.getElementById("canvas");
+            parent.removeChild(child);
+            var reset = document.getElementById('reset');
+            reset.style.display = "none";
+            var playerIdDisplay = document.getElementById('playerIdDisplay');
+            var moveCountDisplay = document.getElementById('moveCountDisplay');
 
+            var div = document.getElementById("RightPane");
+            div.removeChild(playerIdDisplay);
+            div.removeChild(moveCountDisplay);
+
+            moveCount = 0;
+            moveCountDisplay;
+            roverCount = 1;
+            // animation variables
+            roverX = [0];
+            roverY = [0];
+            roverDead = [0];
+            mineX = [];
+            mineY = [];
+            mineAdjMatrix = [];
+            edgeMines = [];
+            expX = [];
+            expY = [];
+            expCount = 0;
+            selected = 0;
+
+            mineCount = mineX.length;
+        }
         function verifyAndStart() {
 
             // Get the value of the input field with id="numb"
@@ -589,7 +621,8 @@
             // If x is Not a Number or less than one or greater than 10
             if (isValidInput(maxRoverCount) && isValidInput(gridSize)) {
                 gridSize = gridSize * 40;
-
+                var reset = document.getElementById('reset');
+                reset.style.display = "block";
 
                 canvas = document.createElement("canvas");
                 canvas.id = "canvas";
@@ -661,7 +694,7 @@
     </div>
 
 
-    <div class="form-group" id="RightPane" style="position: absolute; top:0; left: 70%;">
+    <div class="form-group" id="RightPane" style="position: absolute; top:0; left: 70%; width:30%">
         <a href="#" id="firstButton" class="btn btn-default" rel="popover" data-placement="bottom"
            data-message="Message">Instructions</a>
 
@@ -680,6 +713,10 @@
 
 
         <button type="button" id="submit" class="btn btn-primary" onclick="verifyAndStart()">Submit</button>
+        <button type="button" id="reset" class="btn btn-primary" onclick="resetGame()"
+                style="float: right;display: none">Reset
+            Game
+        </button>
 
         <div id="message" style="display:none;">
             <b>Game Instructions</b>
