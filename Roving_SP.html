@@ -4,7 +4,8 @@
     <meta http-equiv="content-type" content="text/html; charset=UTF-8">
     <meta name="robots" content="noindex, nofollow">
     <meta name="googlebot" content="noindex, nofollow">
- <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>    <link rel="stylesheet" type="text/css" href="css/result-light.css">
+    <script type="text/javascript" src="jquery-1.9.1.js"></script>
+    <link rel="stylesheet" type="text/css" href="css/result-light.css">
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css"
           integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"
@@ -27,6 +28,8 @@
         var roverDead = [0];
         mineX = [];
         mineY = [];
+        var oldMineX = [];
+        var oldMineY = [];
         var mineAdjMatrix = [];
         var edgeMines = [];
         var expX = [];
@@ -288,6 +291,13 @@
             if ((xLoc == 0 && yLoc == 0) || (xLoc == gridSize - 40 && yLoc == gridSize - 40)) {
                 return false;
             }
+            for (var c = 0; c < mineCount; c++) {
+                if (xLoc == mineX[c] && yLoc == mineY[c]) {
+                    // Placing a mine on top of existing mine is invalid. Doesn't affect manual placing as it will remove mine then, but helps with automatic placing. 
+                    return false;
+
+                }
+            }
 
             addMine(xLoc, yLoc);
             for (var i = 0; i < edgeMines.length; i++) {
@@ -323,6 +333,12 @@
             if (xLoc == 0 || xLoc == gridSize - 40 || yLoc == 0 || yLoc == gridSize - 40) {
                 edgeMines.push(mineCount - 1);
             }
+            if (mineCount == maxMines) {
+                var confirm = document.getElementById('ConfirmMines');
+                confirm.style.display = 'block';
+                confirm.disabled = false;
+            }
+
         }
 
         function deleteMine(c) {
@@ -354,19 +370,60 @@
             mineX.splice(c, 1);
             mineY.splice(c, 1);
             mineCount--;
+            if (mineCount < maxMines) {
+                var confirm = document.getElementById('ConfirmMines');
+                confirm.style.display = 'block';
+                confirm.disabled = true;
+            }
+
 
         }
+        function confirmMines() {
+            oldMineX = mineX.slice();
+            oldMineY = mineY.slice();
+            //console.log("phase 0 over", mineX, mineY, oldMineX, oldMineY);
+            allMines = mineX.concat(mineY);
+            var restart = document.getElementById('restart');
+            restart.style.display = "block";
+            restart.disabled = false;
+            phase = 1;
+            $('#playerIdDisplay').html("Mines placed. <br> Starting phase " + (phase + 1));
+            draw(0, 0, roverCount + 1);
+            var confirm = document.getElementById('ConfirmMines');
+            confirm.style.display = 'none';
+            confirm.disabled = true;
+            var randMines = document.getElementById('RandomMines');
+            randMines.style.display = 'none';
+            randMines.disabled = true;
+            var moveCountDisplay = document.getElementById('moveCountDisplay');
+            $(moveCountDisplay).html("Moves so far : " + moveCount);
 
+
+        }
+        function randomMines() {
+            mineX = [];
+            mineY = [];
+            mineAdjMatrix = [];
+            edgeMines = [];
+            mineCount = 0;
+            //console.log("GENERATE RANDOM MINES");
+            while (mineCount < maxMines) {
+                var x = Math.floor(Math.random() * gridSize);
+                var y = Math.floor(Math.random() * gridSize);
+                x = x - (x % 40);
+                y = y - (y % 40);
+
+                if (isValidMineLocation(x, y) == true) {
+                    //console.log("generating at", x, y);
+                    addMine(x, y);
+                    draw(0, 0, roverCount + 1);
+                }
+            }
+        }
         function handleClickPhase0(e) {
 
             mouseX = parseInt(e.pageX - offsetX);
             mouseY = parseInt(e.pageY - offsetY);
-//            if (mineCount >= maxMines) {
-//                phase = 1;
-//                $('#playerIdDisplay').html("Mines placed. Click on the mothership to start " + (phase + 1));
-//
-//                return;
-//            }
             for (var c = 0; c < mineCount; c++) {
                 if (mouseX > mineX[c] && mouseX < mineX[c] + 40
                         && mouseY > mineY[c] && mouseY < mineY[c] + 40) {
@@ -378,23 +435,16 @@
 
                 }
             }
+            if (mineCount == maxMines) {
+                return;
+            }
+
             xLoc = mouseX - (mouseX % 40);
             yLoc = mouseY - (mouseY % 40);
-            console.log("IN HCP0");
+            //console.log("IN HCP0");
             if (isValidMineLocation(xLoc, yLoc) == true) {
-
                 addMine(xLoc, yLoc);
                 draw(0, 0, roverCount + 1);
-                if (mineCount == maxMines) {
-
-                    allMines = mineX.concat(mineY);
-                    phase = 1;
-                    $('#playerIdDisplay').html("Mines placed. <br> Click on the mothership to start phase " + (phase +
-                            1));
-
-                    return;
-                }
-
             }
 
         }
@@ -577,7 +627,54 @@
             })
         });
 
+        function restartGame() {
+            //console.log("restart pressed", oldMineX, oldMineY);
+
+            document.getElementById("submit").disabled = true;
+            document.getElementById("rover-count").disabled = true;
+            document.getElementById("grid-size").disabled = true;
+            //var parent = document.getElementById("inner");
+            //var child = document.getElementById("canvas");
+            //parent.removeChild(child);
+            //var reset = document.getElementById('reset');
+            //reset.style.display = "none";
+            //var restart = document.getElementById('restart');
+            //restart.style.display = "none";
+
+            var playerIdDisplay = document.getElementById('playerIdDisplay');
+            var moveCountDisplay = document.getElementById('moveCountDisplay');
+
+            var div = document.getElementById("RightPane");
+            //div.removeChild(playerIdDisplay);
+            //div.removeChild(moveCountDisplay);
+
+            moveCount = 0;
+            $(moveCountDisplay).html("Moves so far : " + moveCount);
+
+            moveCountDisplay;
+            roverCount = 1;
+            // animation variables
+            roverX = [0];
+            roverY = [0];
+            roverDead = [0];
+            roverDirection = [0];
+            mineX = oldMineX.slice();
+            mineY = oldMineY.slice();
+            //mineAdjMatrix = [];
+            //edgeMines = [];
+            expX = [];
+            expY = [];
+            expCount = 0;
+            selected = 0;
+
+            mineCount = mineX.length;
+            draw(0, 0, roverCount + 1);
+
+        }
         function resetGame() {
+            //window.parent.location = window.parent.location.href;
+
+            //console.log("reset pressed", mineX);
             document.getElementById("submit").disabled = false;
             document.getElementById("rover-count").disabled = false;
             document.getElementById("grid-size").disabled = false;
@@ -586,12 +683,27 @@
             parent.removeChild(child);
             var reset = document.getElementById('reset');
             reset.style.display = "none";
+            var restart = document.getElementById('restart');
+            restart.style.display = "none";
+
             var playerIdDisplay = document.getElementById('playerIdDisplay');
             var moveCountDisplay = document.getElementById('moveCountDisplay');
 
-            var div = document.getElementById("RightPane");
+            var div = document.getElementById("inner");
             div.removeChild(playerIdDisplay);
             div.removeChild(moveCountDisplay);
+            var finishResults = document.getElementById('finishResults');
+            while (finishResults) {
+                div = document.getElementById("RightPane");
+                div.removeChild(finishResults);
+                finishResults = document.getElementById('finishResults');
+            }
+            var confirm = document.getElementById('ConfirmMines');
+            confirm.style.display = 'none';
+            confirm.disabled = true;
+            var randMines = document.getElementById('RandomMines');
+            randMines.style.display = 'none';
+            randMines.disabled = true;
 
             moveCount = 0;
             moveCountDisplay;
@@ -610,8 +722,10 @@
             selected = 0;
 
             mineCount = mineX.length;
+
         }
         function verifyAndStart() {
+            //console.log("verifying and starting", mineX);
 
             // Get the value of the input field with id="numb"
             maxRoverCount = document.getElementById("rover-count").value;
@@ -623,6 +737,9 @@
                 gridSize = gridSize * 40;
                 var reset = document.getElementById('reset');
                 reset.style.display = "block";
+                var restart = document.getElementById('restart');
+                restart.style.display = "block";
+                restart.disabled = true;
 
                 canvas = document.createElement("canvas");
                 canvas.id = "canvas";
@@ -652,13 +769,20 @@
                 moveCountDisplay.id = "moveCountDisplay";
                 moveCountDisplay.class = "text-primary";
                 $(playerIdDisplay).html(" You are player " + (phase + 1));
-                $(moveCountDisplay).html("Moves so far : " + moveCount);
+                //$(moveCountDisplay).html("Moves so far : " + moveCount);
 
-                var div = document.getElementById("RightPane");
+                var div = document.getElementById("inner");
                 div.appendChild(playerIdDisplay);
                 div.appendChild(moveCountDisplay);
 
-                startGame(phase);
+                var confirm = document.getElementById('ConfirmMines');
+                confirm.style.display = 'block';
+                confirm.disabled = true;
+                var randMines = document.getElementById('RandomMines');
+                randMines.style.display = 'block';
+                randMines.disabled = false;
+
+                startGame();
 
 
             } else {
@@ -690,6 +814,7 @@
 <div class="wrapper" id="wrapper" style="margin: auto; width: 95%; position: absolute;">
     <div id="outer" style="text-align: center; position:absolute; width:65%">
         <div id="inner" style="display: inline-block;">
+
         </div>
     </div>
 
@@ -705,30 +830,40 @@
         <br>
 
         Enter the number of bombs/rovers: <input type="text" id="rover-count" value="5" class="form-control"
-                                                 required><br>
+                                                 required style=";margin: 5px"><br>
         <br>
         Enter the size of the square grid: <input type="text" id="grid-size" value="7" class="form-control"
-                                                  required><br>
+                                                  required style=";margin: 5px"><br>
         <br>
 
 
-        <button type="button" id="submit" class="btn btn-primary" onclick="verifyAndStart()">Submit</button>
+        <button type="button" id="submit" class="btn btn-primary" style=";margin: 5px" onclick="verifyAndStart()">
+            Submit</button>
         <button type="button" id="reset" class="btn btn-primary" onclick="resetGame()"
-                style="float: right;display: none">Reset
-            Game
+                style="float: right;display: none;margin: 5px;">Start over!
         </button>
+        <button type="button" id="restart" class="btn btn-primary" onclick="restartGame()"
+                style="float: right;display: none;margin: 5px">Try again!
+        </button>
+        <br>
+        <br>
+        <button type="button" id="ConfirmMines" class="btn btn-primary" disabled=true onclick="confirmMines()"
+                style="display:none;margin: 5px">Confirm Mines
+        </button>
+        <button type="button" id="RandomMines" class="btn btn-primary" disabled=true onclick="randomMines()"
+                style="display:none;margin: 5px"> Generate random mines
+        </button>
+
 
         <div id="message" style="display:none;">
             <b>Game Instructions</b>
             <br>
             <b>Player 1</b>
             <ul>
-                <li>Player 1 plays first and plants as many mines as given in game controls on the field.</li>
+                <li>Player 1 plays first and plants as many mines as given in game controls on the firld.</li>
                 <li>The mine placement should not block all paths of the mothership from the base to the destination.
                 </li>
                 <li>Mines cannot be placed on the mothership and on the destination.</li>
-                <li>Left click the mothership once you finish placing mines to hide the mines and start player 2.</li>
-
             </ul>
             <b>Player 2</b>
             <br>
